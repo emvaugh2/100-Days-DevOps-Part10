@@ -9,7 +9,126 @@ THEE. FINAL. STRETCH. Lets finish up Ansible and Terraform so we'll be officiall
 
 ## Day 99: Attach IAM Policy for DynamoDB Access Using Terraform
 
+UPDATES: AI simplified my DynamoDB table. It also made me change my Principal from `dynamodb.` to `ec2.` and this is why I suck at IAM. I'll have to sit down and REALLY dissect it one day. I also needed to update my resource in my policy block so that I could strictly allow these actions against only the table I created. We also had to fix a BUNCH of syntax errors (mainly hyphens vs. underscores) but in the end, we got it to work. Terraform might be a headache to set up BUT once you get it running, it makes deployments so much easier. 
 
+Now on to the last lab!
+
+
+File input for the main.tf file
+```
+# Creates the Dynamo DB table
+resource "aws_dynamodb_table" "nautilus-table" {
+  name           = "nautilus-table"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "id"
+
+  attribute {
+    name = "id"
+    type = "S"
+  }
+ 
+  tags = {
+    Name        = "var.KKE_TABLE_NAME"
+  }
+}
+
+# Creates the IAM role that should attach to the EC2 console
+resource "aws_iam_role" "nautilus-role" {
+  name = "nautilus-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      },
+    ]
+  })
+
+  tags = {
+    Name = "nautilus-role"
+  }
+}
+
+# Creates the IAM policy that accompanies the role and defines the actions that can be taken against the Dynamo DB table
+resource "aws_iam_policy" "nautilus-readonly-policy" {
+  name        = "nautilus-readonly-policy"
+  path        = "/"
+  description = "Allow read-only access to DynamoDB Table"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "dynamodb:Query",
+          "dynamodb:Scan",
+          "dynamodb:GetItem"
+        ]
+        Effect   = "Allow"
+        Resource = aws_dynamodb_table.nautilus-table.arn
+      },
+    ]
+  })
+
+  tags = {
+    Name = "nautilus-readonly-policy"
+  }
+
+}
+
+# Attaches the policy to the role
+resource "aws_iam_policy_attachment" "nautilus-policy-attach" {
+  name       = "nautilus-readonly-policy-attachment"
+  roles      = [aws_iam_role.nautilus-role.name]
+  policy_arn = aws_iam_policy.nautilus-readonly_policy.arn
+}
+```
+
+File input for the variables.tf
+
+```
+variable "KKE_TABLE_NAME" {
+  type    = string
+}
+
+variable "KKE_ROLE_NAME" {
+  type    = string
+}
+
+variable "KKE_POLICY_NAME" {
+  type    = string
+}
+```
+
+Input for output.tf
+
+```
+output "kke_dynamodb_table" {
+  value = aws_dynamodb_table.nautilus-table.name
+}
+
+output "kke_iam_role_name" {
+  value = aws_iam_role.nautilus-role.name
+}
+
+output "kke_iam_policy_name" {
+  value = aws_iam_policy.nautilus-readonly-policy.name
+}
+```
+
+File input for the terraform.tfvars 
+
+```
+KKE_TABLE_NAME  = "nautilus-table"
+KKE_ROLE_NAME   = "nautilus-role"
+KKE_POLICY_NAME = "nautilus-readonly-policy"
+```
 
 ## Day 98: Launch EC2 in Private VPC Subnet Using Terraform
 
