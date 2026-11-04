@@ -37,6 +37,26 @@ THEE. FINAL. STRETCH. Lets finish up Ansible and Terraform so we'll be officiall
 
 ## Day 92: Managing Jinja2 Templates Using Ansible
 
+I don't know how to do this lab at all. I'm going to have AI walk me through it and review it another time. So, from what I can tell, the Jinja2 templates are sort of like Helm in a way or Terraform modules. It allows you to break down a large `playbook.yml` file into small parts. You call these smaller parts roles. You can have roles for Apache, NGINX, monitoring, etc. just like you would have with different Terraform files and modules instead of bundling it all into one main.tf file. 
+
+
+```
+---
+- name: Configure HTTPD on App Server 3
+  hosts: stapp03
+  become: true
+
+  roles:
+    - role/httpd
+```
+
+This playbook says on host `stapp03`, run everything that I defined in my HTTPD role. The file path is underneath the role so the template will know how to find the role. Ansible will go into the file path and find the tasks associated with this role under `tasks/main.yml`. This is the standard task entry point. You can have multiple roles in your playbook file as well such as httpd, docker, monitoring, etc. As long as you have all of these tasks defined in the tasks/main.yml file. 
+
+The template module basically just allows you to use variables. These values will be grabbed by the HOST that you run the playbook against. So for stapp03, if you make hostname, IP address, and like, idk some other type of variable, the template module will return stapp03 for the hostname, lets say 10.0.0.3 for the IP address if that's stapp03's IP, and such and such. The src and dest just says grab your information from this source and insert it into this destination. 
+
+The source Jinja2 files can be found in the `/role/<specific_role>/templates/<file_name?` path. They'll typically have the file extension of `.j2`. The `.j2` extension on the file tells us we're using a Jinja2 template where Ansible can interpret variable information.
+
+To create the directory tree for using Jinja2 templates, use the command `ansible-galaxy role init <role_name>`
 
 
 ## Day 91: Ansible Lineinfile Module
