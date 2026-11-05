@@ -3,9 +3,66 @@
 THEE. FINAL. STRETCH. Lets finish up Ansible and Terraform so we'll be officially DONE with the 100 Days of DevOps challenge. 
 
 
+
+Final Notes:
+
+What a journey! This definitely increased my Kubernets, Git, and Jenkins skills. I learned a lot and I feel even more ready to tackle bigger DevOps jobs. Thank you for sticking around. We'll see what the next challenge holds!
+
+
 ## Day 100: Create and Configure Alarm Using CloudWatch Using Terraform
 
+For the last lab, we needed to deploy an EC2 instance and connect it to a CloudWatch resource so that CloudWatch could send SNS email alerts if the EC2 CPU utilization increased beyond 90% over a period of 5 minutes. I did what I usually do and copied the resource code from the Terraform website. I got much of the code on my own besides attaching CloudWatch to the EC2 and setting up the email alert. I didnt know how to do that. 
 
+Once I pushed the deployment, I received the green check!
+
+Creates the EC2 instance
+```
+# Creates the EC2 
+resource "aws_instance" "devops-ec2" {
+
+  ami           = "ami-0c02fb55956c7d316"
+  instance_type = "t2.micro"
+
+
+  tags = {
+    Name = "devops-ec2"
+  }
+}
+```
+
+Creates the CloudWatch resouce
+```
+resource "aws_cloudwatch_metric_alarm" "devops-alarm" {
+  alarm_name                = "devops-alarm"
+  comparison_operator       = "GreaterThanOrEqualToThreshold"
+  evaluation_periods        = 1
+  metric_name               = "CPUUtilization"
+  namespace                 = "AWS/EC2"
+  period                    = 300
+  statistic                 = "Average"
+  threshold                 = 90
+  alarm_description         = "This metric monitors ec2 cpu utilization"
+  insufficient_data_actions = []
+  alarm_actions = [
+    aws_sns_topic.sns_topic.arn
+  ]
+  dimensions = {
+    InstanceId = aws_instance.devops-ec2.id
+  }
+}
+
+```
+
+Input for the outputs.tf file
+```
+output "KKE_instance_name" {
+  value = "devops-ec2"
+}
+
+output "KKE_alarm_name" {
+  value = "devops-alarm"
+}
+```
 
 ## Day 99: Attach IAM Policy for DynamoDB Access Using Terraform
 
